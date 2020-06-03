@@ -4,6 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+
+use App\Photo;
+use App\User;
 
 class PhotoController extends Controller
 {
@@ -14,7 +20,9 @@ class PhotoController extends Controller
      */
     public function index()
     {
-        //
+        $photos = Photo::orderBy('updated_at', 'DESC')->paginate(25);
+
+        return view('admin.photos.index', compact('photos'));
     }
 
     /**
@@ -24,7 +32,9 @@ class PhotoController extends Controller
      */
     public function create()
     {
-        //
+        $photos = Photo::all();
+
+        return view('admin.photos.create', compact('photos'));
     }
 
     /**
@@ -35,7 +45,34 @@ class PhotoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->all();
+        $data['user_id'] = Auth::id();
+        $path = Storage::disk('public')->put('images', $data['path']);
+
+        $validator = Validator::make($data, [
+            'name' => 'required',
+            'description' => 'required',
+            'path' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('admin.photos.create')
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $photo = new Photo;
+
+        $photo->fill($data);
+        $saved = $photo->save();
+
+        if (!$saved) {
+            return redirect()->route('admin.photos.create')
+                ->with('failure', 'Foto non caricata.');
+        }
+
+        return redirect()->route('admin.photos.show', $photo->id)
+            ->with('success', 'Foto ' . $photo->id . ' caricata correttamente.');
     }
 
     /**

@@ -62,7 +62,9 @@
                         @endforeach
                     </tbody>
                 </table>
-                {{$pages->links()}}
+                <div class="mx-auto">
+                    {{$pages->links()}}
+                </div>
             </div>
         </div>
     </div>
